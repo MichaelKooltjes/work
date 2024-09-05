@@ -88,12 +88,12 @@
         <input type="number" id="income" name="income" required>
 
         <label>Start time:</label>
-        <input type="range" id="startSlider" min="0" max="23" step="1" value="9" oninput="updateStartTimeFromSlider()">
-        <input type="time" id="startTime" value="09:00" oninput="updateStartTimeFromInput()">
+        <input type="range" id="startSlider" min="0" max="20" step="1" value="9" oninput="updateStartTimeFromSlider()">
+        <input type="time" id="startTime" value="09:00" oninput="updateStartTimeFromInput()" max="20:00">
 
         <label>End time:</label>
-        <input type="range" id="endSlider" min="0" max="23" step="1" value="17" oninput="updateEndTimeFromSlider()">
-        <input type="time" id="endTime" value="17:00" oninput="updateEndTimeFromInput()">
+        <input type="range" id="endSlider" min="0" max="20" step="1" value="17" oninput="updateEndTimeFromSlider()">
+        <input type="time" id="endTime" value="17:00" oninput="updateEndTimeFromInput()" max="20:00">
 
         <label for="bonus">Added bonus (in €):</label>
         <input type="number" id="bonus" name="bonus" value="0">
@@ -159,7 +159,17 @@
             const now = new Date();
             const currentHour = now.getHours() + now.getMinutes() / 60;
 
-            const totalWorkTime = endTime - startTime;
+            let totalWorkTime = endTime - startTime;
+
+            // Break time logic
+            let breakTime = 0;
+            if (totalWorkTime >= 5.5) {
+                breakTime = 0.5; // 30 minutes break
+            } else {
+                breakTime = 0.25; // 15 minutes break
+            }
+
+            totalWorkTime = totalWorkTime - breakTime; // Adjust for break time
             const totalIncome = income * totalWorkTime + bonus;
 
             document.getElementById('totalEarnings').textContent = totalIncome.toFixed(2);
