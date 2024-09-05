@@ -74,6 +74,17 @@
             z-index: 1;
         }
 
+        .meal-compensation-bar {
+            height: 100%;
+            background-color: #5bc0de;
+            width: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: width 0.5s ease;
+            z-index: 2;
+        }
+
         .output {
             margin-top: 20px;
         }
@@ -96,6 +107,12 @@
             margin-top: 10px;
             font-size: 1.2em;
             color: #f0ad4e;
+        }
+
+        .meal-compensation-display {
+            margin-top: 10px;
+            font-size: 1.2em;
+            color: #5bc0de;
         }
     </style>
 </head>
@@ -123,10 +140,15 @@
         <div class="break-time-display">
             <p>Break time: <span id="breakTimeDisplay">0 minutes</span></p>
         </div>
+
+        <div class="meal-compensation-display">
+            <p>Meal compensation: €<span id="mealCompensationDisplay">0.00</span></p>
+        </div>
     </div>
 
     <div class="progress-container">
         <div class="break-bar" id="breakBar"></div>
+        <div class="meal-compensation-bar" id="mealCompensationBar"></div>
         <div class="progress-bar" id="progressBar"></div>
     </div>
 
@@ -192,11 +214,19 @@
             }
 
             totalWorkTime = totalWorkTime - breakTime; // Adjust for break time
-            const totalIncome = income * totalWorkTime + bonus;
+            let totalIncome = income * totalWorkTime + bonus;
 
-            // Display break time in minutes
+            // Meal compensation logic
+            let mealCompensation = 0;
+            if (breakTime === 0.5 && endTime === 20) {
+                mealCompensation = 7.50; // Meal compensation of 7.50€
+                totalIncome += mealCompensation; // Add meal compensation to total income
+            }
+
+            // Display break time and meal compensation
             const breakMinutes = breakTime * 60;
             document.getElementById('breakTimeDisplay').textContent = `${breakMinutes} minutes`;
+            document.getElementById('mealCompensationDisplay').textContent = mealCompensation.toFixed(2);
 
             // Update earnings display
             document.getElementById('totalEarnings').textContent = totalIncome.toFixed(2);
@@ -208,25 +238,29 @@
 
                 if (currentHour >= endTime) {
                     clearInterval(progressInterval);
-                    updateProgressBar(100, totalIncome, totalIncome, breakTime, totalWorkTime);
+                    updateProgressBar(100, totalIncome, totalIncome, breakTime, totalWorkTime, mealCompensation);
                     return;
                 }
 
                 const elapsedWorkTime = Math.max(currentHour - startTime, 0);
-                const moneyMade = Math.min(elapsedWorkTime * income + bonus, totalIncome);
+                const moneyMade = Math.min(elapsedWorkTime * income + bonus + mealCompensation, totalIncome);
                 const progressPercentage = Math.min((elapsedWorkTime / totalWorkTime) * 100, 100);
 
-                updateProgressBar(progressPercentage, moneyMade, totalIncome, breakTime, totalWorkTime);
+                updateProgressBar(progressPercentage, moneyMade, totalIncome, breakTime, totalWorkTime, mealCompensation);
             }, 1000);
         }
 
-        function updateProgressBar(percentage, moneyMade, totalIncome, breakTime, totalWorkTime) {
+        function updateProgressBar(percentage, moneyMade, totalIncome, breakTime, totalWorkTime, mealCompensation) {
             const breakPercentage = (breakTime / (totalWorkTime + breakTime)) * 100;
+            const mealCompensationPercentage = mealCompensation > 0 ? 10 : 0; // Meal compensation occupies 10% of the bar
 
             // Update break bar
             document.getElementById('breakBar').style.width = breakPercentage + '%';
 
-            // Update progress bar (stacked over the break bar)
+            // Update meal compensation bar
+            document.getElementById('mealCompensationBar').style.width = mealCompensationPercentage + '%';
+
+            // Update progress bar (stacked over the break and meal compensation bar)
             document.getElementById('progressBar').style.width = percentage + '%';
 
             // Update the money made so far
