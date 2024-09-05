@@ -11,9 +11,9 @@
         .form-container { background-color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
         .progress-container { height: 30px; background-color: #f3f3f3; border-radius: 25px; position: relative; }
         .bar { position: absolute; top: 0; left: 0; height: 100%; transition: width 0.5s ease; }
-        .progress-bar { background-color: #4CAF50; }
-        .break-bar { background-color: #F0AD4E; }
-        .meal-bar { background-color: #5BC0DE; }
+        .progress-bar { background-color: #4CAF50; z-index: 3; }
+        .break-bar { background-color: #F0AD4E; z-index: 2; }
+        .meal-bar { background-color: #5BC0DE; z-index: 1; }
         label, .output p { color: #4CAF50; font-weight: bold; }
         input { width: 100%; margin: 10px 0; padding: 5px; border: 1px solid #ddd; border-radius: 4px; }
         .output p { margin-top: 10px; }
@@ -34,8 +34,8 @@
         </div>
     </div>
     <div class="progress-container">
-        <div class="bar break-bar" id="breakBar"></div>
         <div class="bar meal-bar" id="mealCompensationBar"></div>
+        <div class="bar break-bar" id="breakBar"></div>
         <div class="bar progress-bar" id="progressBar"></div>
     </div>
     <div class="output">
