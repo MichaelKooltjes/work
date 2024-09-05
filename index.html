@@ -28,7 +28,7 @@
             max-width: 500px;
         }
 
-        .form-container input[type="number"], .form-container input[type="range"] {
+        .form-container input[type="number"], .form-container input[type="range"], .form-container input[type="time"] {
             width: 100%;
             margin: 10px 0;
             padding: 5px;
@@ -74,6 +74,11 @@
             color: #4caf50;
             font-weight: bold;
         }
+
+        .earnings-display {
+            font-size: 1.4em;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
@@ -83,26 +88,17 @@
         <input type="number" id="income" name="income" required>
 
         <label>Start time:</label>
-        <input type="range" id="startSlider" min="0" max="24" step="1" value="9" oninput="updateStartTime()">
-        <div class="slider-values">
-            <span>00:00</span>
-            <span id="startTimeDisplay">09:00</span>
-            <span>24:00</span>
-        </div>
+        <input type="range" id="startSlider" min="0" max="24" step="1" value="9" oninput="updateStartTimeFromSlider()">
+        <input type="time" id="startTime" value="09:00" oninput="updateStartTimeFromInput()">
 
         <label>End time:</label>
-        <input type="range" id="endSlider" min="0" max="24" step="1" value="17" oninput="updateEndTime()">
-        <div class="slider-values">
-            <span>00:00</span>
-            <span id="endTimeDisplay">17:00</span>
-            <span>24:00</span>
-        </div>
+        <input type="range" id="endSlider" min="0" max="24" step="1" value="17" oninput="updateEndTimeFromSlider()">
+        <input type="time" id="endTime" value="17:00" oninput="updateEndTimeFromInput()">
 
         <label for="bonus">Added bonus (in €):</label>
         <input type="number" id="bonus" name="bonus" value="0">
 
-        <div class="output">
-            <p>Money made so far: €<span id="moneyMade">0</span></p>
+        <div class="earnings-display">
             <p>Total expected earnings: €<span id="totalEarnings">0</span></p>
         </div>
     </div>
@@ -111,22 +107,38 @@
         <div class="progress-bar" id="progressBar"></div>
     </div>
 
+    <div class="earnings-display">
+        <p>Money made so far: €<span id="moneyMade">0</span></p>
+    </div>
+
     <script>
         let progressInterval;
 
-        document.querySelectorAll('#income, #bonus, #startSlider, #endSlider').forEach(input => {
+        document.querySelectorAll('#income, #bonus, #startSlider, #endSlider, #startTime, #endTime').forEach(input => {
             input.addEventListener('input', startProgress);
         });
 
-        function updateStartTime() {
-            const startValue = document.getElementById('startSlider').value;
-            document.getElementById('startTimeDisplay').textContent = `${startValue.padStart(2, '0')}:00`;
+        function updateStartTimeFromSlider() {
+            const startSliderValue = document.getElementById('startSlider').value;
+            document.getElementById('startTime').value = `${startSliderValue.padStart(2, '0')}:00`;
             startProgress();
         }
 
-        function updateEndTime() {
-            const endValue = document.getElementById('endSlider').value;
-            document.getElementById('endTimeDisplay').textContent = `${endValue.padStart(2, '0')}:00`;
+        function updateEndTimeFromSlider() {
+            const endSliderValue = document.getElementById('endSlider').value;
+            document.getElementById('endTime').value = `${endSliderValue.padStart(2, '0')}:00`;
+            startProgress();
+        }
+
+        function updateStartTimeFromInput() {
+            const startTimeValue = document.getElementById('startTime').value.split(':')[0];
+            document.getElementById('startSlider').value = startTimeValue;
+            startProgress();
+        }
+
+        function updateEndTimeFromInput() {
+            const endTimeValue = document.getElementById('endTime').value.split(':')[0];
+            document.getElementById('endSlider').value = endTimeValue;
             startProgress();
         }
 
@@ -137,50 +149,5 @@
             const bonus = parseFloat(document.getElementById('bonus').value) || 0;
 
             if (endTime <= startTime || isNaN(income)) {
-                alert('End time must be after start time, and income per hour should be valid.');
-                return;
-            }
-
-            const now = new Date();
-            const currentHour = now.getHours() + now.getMinutes() / 60;
-
-            const totalWorkTime = endTime - startTime; 
-            const totalIncome = income * totalWorkTime + bonus;
-
-            document.getElementById('totalEarnings').textContent = totalIncome.toFixed(2);
-
-            if (progressInterval) clearInterval(progressInterval);
-
-            progressInterval = setInterval(() => {
-                const currentHour = new Date().getHours() + new Date().getMinutes() / 60;
-
-                if (currentHour >= endTime) {
-                    clearInterval(progressInterval);
-                    updateProgressBar(100, totalIncome);
-                    return;
-                }
-
-                const elapsedWorkTime = Math.max(currentHour - startTime, 0); 
-                const moneyMade = Math.min(elapsedWorkTime * income + bonus, totalIncome);
-                const progressPercentage = Math.min((elapsedWorkTime / totalWorkTime) * 100, 100);
-
-                updateProgressBar(progressPercentage, moneyMade);
-            }, 1000);
-        }
-
-        function updateProgressBar(percentage, moneyMade) {
-            document.getElementById('progressBar').style.width = percentage + '%';
-            document.getElementById('moneyMade').textContent = moneyMade.toFixed(2);
-        }
-
-        Number.prototype.padStart = function(size, char) {
-            let result = this.toString();
-            while (result.length < size) result = char + result;
-            return result;
-        };
-
-        // Initialize on load
-        startProgress();
-    </script>
-</body>
-</html>
+                // Reset the progress if the input is invalid, no pop-ups are used
+                update
