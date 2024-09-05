@@ -11,9 +11,9 @@
         .form-container { background-color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
         .progress-container { height: 30px; background-color: #f3f3f3; border-radius: 25px; position: relative; }
         .bar { position: absolute; top: 0; left: 0; height: 100%; transition: width 0.5s ease; }
-        .progress-bar { background-color: #4CAF50; z-index: 3; }
+        .progress-bar { background-color: #4CAF50; z-index: 1; }
         .break-bar { background-color: #F0AD4E; z-index: 2; }
-        .meal-bar { background-color: #5BC0DE; z-index: 1; }
+        .meal-bar { background-color: #5BC0DE; z-index: 3; }
         label, .output p { color: #4CAF50; font-weight: bold; }
         input { width: 100%; margin: 10px 0; padding: 5px; border: 1px solid #ddd; border-radius: 4px; }
         .output p { margin-top: 10px; }
@@ -69,10 +69,14 @@
             const elapsedWorkTime = Math.max(currentHour - startTime, 0) - breakTime;
             const moneyMade = Math.min(elapsedWorkTime * income + mealComp, totalIncome);
 
-            const breakPercent = (breakTime / (totalWorkTime + breakTime)) * 100, mealCompPercent = mealComp > 0 ? 10 : 0;
+            const breakPercent = (breakTime / (totalWorkTime + breakTime)) * 100;
+            const mealCompPercent = mealComp > 0 ? (mealComp / totalIncome) * 100 : 0;
+            const workPercent = (elapsedWorkTime / totalWorkTime) * 100;
+
             byId('breakBar').style.width = breakPercent + '%';
             byId('mealCompensationBar').style.width = mealCompPercent + '%';
-            byId('progressBar').style.width = (elapsedWorkTime / totalWorkTime) * 100 + '%';
+            byId('progressBar').style.width = workPercent + '%';
+
             byId('totalEarnings').textContent = totalIncome.toFixed(2);
             byId('breakTimeDisplay').textContent = (breakTime * 60) + ' minutes';
             byId('mealCompensationDisplay').textContent = mealComp.toFixed(2);
