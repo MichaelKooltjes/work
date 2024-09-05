@@ -1,12 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My GitHub Page</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Progress Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+        }
+        input {
+            margin: 5px 0;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #f3f3f3;
+            border-radius: 25px;
+            margin-top: 20px;
+        }
+        .progress-bar {
+            width: 0;
+            height: 30px;
+            background-color: #4caf50;
+            border-radius: 25px;
+        }
+        .output {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-  <h1>Welcome to My Website!</h1>
-  <p>This is a simple GitHub Pages website.</p>
+    <h1>Work Progress Tracker</h1>
+    <form id="progressForm">
+        <label for="income">Income per hour (in €):</label>
+        <input type="number" id="income" name="income" required><br>
+
+        <label for="start">Start time (24-hour format):</label>
+        <input type="time" id="start" name="start" required><br>
+
+        <label for="end">End time (24-hour format):</label>
+        <input type="time" id="end" name="end" required><br>
+
+        <label for="bonus">Added bonus (in €):</label>
+        <input type="number" id="bonus" name="bonus" value="0"><br>
+
+        <button type="button" onclick="startProgress()">Start</button>
+    </form>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="output">
+        <p>Money made so far: €<span id="moneyMade">0</span></p>
+    </div>
+
+    <script>
+        let progressInterval;
+
+        function startProgress() {
+            // Get the user inputs
+            const income = parseFloat(document.getElementById('income').value);
+            const startTime = document.getElementById('start').value;
+            const endTime = document.getElementById('end').value;
+            const bonus = parseFloat(document.getElementById('bonus').value) || 0;
+
+            // Convert start and end times to Date objects
+            const startDateTime = new Date();
+            const endDateTime = new Date();
+
+            const [startHour, startMinute] = startTime.split(':').map(Number);
+            const [endHour, endMinute] = endTime.split(':').map(Number);
+
+            startDateTime.setHours(startHour, startMinute, 0, 0);
+            endDateTime.setHours(endHour, endMinute, 0, 0);
+
+            if (endDateTime < startDateTime) {
+                alert('End time must be after start time.');
+                return;
+            }
+
+            const totalWorkTime = (endDateTime - startDateTime) / 1000 / 60 / 60; // in hours
+            const totalIncome = (income * totalWorkTime) + bonus;
+
+            if (progressInterval) clearInterval(progressInterval);
+
+            progressInterval = setInterval(() => {
+                const now = new Date();
+
+                // If current time is past the end time, stop updating
+                if (now >= endDateTime) {
+                    clearInterval(progressInterval);
+                    updateProgressBar(100, totalIncome);
+                    return;
+                }
+
+                const elapsedWorkTime = (now - startDateTime) / 1000 / 60 / 60; // in hours
+                const moneyMade = Math.min(elapsedWorkTime * income + bonus, totalIncome);
+
+                updateProgressBar((elapsedWorkTime / totalWorkTime) * 100, moneyMade);
+            }, 1000);
+        }
+
+        function updateProgressBar(percentage, moneyMade) {
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('moneyMade').textContent = moneyMade.toFixed(2);
+        }
+    </script>
 </body>
 </html>
