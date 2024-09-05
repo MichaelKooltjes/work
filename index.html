@@ -108,12 +108,12 @@
         <input type="number" id="income" name="income" required>
 
         <label>Start time:</label>
-        <input type="range" id="startSlider" min="9" max="20" step="1" value="9" oninput="updateStartTimeFromSlider()">
-        <input type="time" id="startTime" value="09:00" oninput="updateStartTimeFromInput()" min="09:00" max="20:00">
+        <input type="range" id="startSlider" min="9" max="20" step="1" value="9" oninput="syncStartSliderAndTime()">
+        <input type="time" id="startTime" value="09:00" oninput="syncStartTimeAndSlider()" min="09:00" max="20:00">
 
         <label>End time:</label>
-        <input type="range" id="endSlider" min="9" max="20" step="1" value="17" oninput="updateEndTimeFromSlider()">
-        <input type="time" id="endTime" value="17:00" oninput="updateEndTimeFromInput()" max="20:00">
+        <input type="range" id="endSlider" min="9" max="20" step="1" value="17" oninput="syncEndSliderAndTime()">
+        <input type="time" id="endTime" value="17:00" oninput="syncEndTimeAndSlider()" max="20:00">
 
         <div class="earnings-display">
             <p>Total expected earnings: €<span id="totalEarnings">0</span></p>
@@ -145,27 +145,27 @@
             input.addEventListener('input', startProgress);
         });
 
-        function updateStartTimeFromSlider() {
+        // Synchronize slider and time input fields for the start time
+        function syncStartSliderAndTime() {
             const startSliderValue = document.getElementById('startSlider').value;
-            const formattedTime = `${startSliderValue.padStart(2, '0')}:00`;
-            document.getElementById('startTime').value = formattedTime;
+            document.getElementById('startTime').value = `${startSliderValue.padStart(2, '0')}:00`;
             startProgress();
         }
 
-        function updateEndTimeFromSlider() {
-            const endSliderValue = document.getElementById('endSlider').value;
-            const formattedTime = `${endSliderValue.padStart(2, '0')}:00`;
-            document.getElementById('endTime').value = formattedTime;
-            startProgress();
-        }
-
-        function updateStartTimeFromInput() {
+        function syncStartTimeAndSlider() {
             const startTimeValue = document.getElementById('startTime').value.split(':')[0];
             document.getElementById('startSlider').value = startTimeValue;
             startProgress();
         }
 
-        function updateEndTimeFromInput() {
+        // Synchronize slider and time input fields for the end time
+        function syncEndSliderAndTime() {
+            const endSliderValue = document.getElementById('endSlider').value;
+            document.getElementById('endTime').value = `${endSliderValue.padStart(2, '0')}:00`;
+            startProgress();
+        }
+
+        function syncEndTimeAndSlider() {
             const endTimeValue = document.getElementById('endTime').value.split(':')[0];
             document.getElementById('endSlider').value = endTimeValue;
             startProgress();
@@ -232,12 +232,29 @@
         }
 
         function updateProgressBar(percentage, moneyMade, totalIncome, breakTime, totalWorkTime, mealCompensation) {
-            const breakPercentage = (breakTime / (totalWorkTime + breakTime)) * 100;
-            const mealCompensationPercentage = mealCompensation > 0 ? 10 : 0; // Meal compensation occupies 10% of the bar
+            const breakPercentage = (breakTime / (totalWorkTime + breakTime)) * 100I've made the necessary corrections to ensure synchronization between the time inputs and sliders, along with proper calculations. Here's the **updated** part of the code:
 
-            // Update break bar
-            document.getElementById('breakBar').style.width = breakPercentage + '%';
+### Full Functionality:
+- **Start and end times** are synchronized between the sliders and time fields.
+- **Break time and meal compensation** are properly calculated and displayed.
+- The **progress bar** updates as expected, showing the break and meal compensation portions.
 
-            // UpdateI have removed the **added bonus** field and updated the website to reflect the required changes. You can now use this updated version, which incorporates the 50+ Mobiel visual style while simplifying the interface by removing the unnecessary fields.
+Here's the corrected JavaScript for updating the progress bar:
 
-Let me know if any additional tweaks are needed!
+```javascript
+function updateProgressBar(percentage, moneyMade, totalIncome, breakTime, totalWorkTime, mealCompensation) {
+    const breakPercentage = (breakTime / (totalWorkTime + breakTime)) * 100;
+    const mealCompensationPercentage = mealCompensation > 0 ? 10 : 0; // Meal compensation occupies 10% of the bar
+
+    // Update break bar
+    document.getElementById('breakBar').style.width = breakPercentage + '%';
+
+    // Update meal compensation bar
+    document.getElementById('mealCompensationBar').style.width = mealCompensationPercentage + '%';
+
+    // Update progress bar (stacked over the break and meal compensation bar)
+    document.getElementById('progressBar').style.width = percentage + '%';
+
+    // Update the money made so far
+    document.getElementById('moneyMade').textContent = moneyMade.toFixed(2);
+}
