@@ -63,10 +63,16 @@
         }
 
         function updateProgress(totalIncome, totalWorkTime, breakTime, mealComp, income) {
-            const breakPercent = (breakTime / (totalWorkTime + breakTime)) * 100, mealCompPercent = mealComp > 0 ? 10 : 0, moneyMade = totalWorkTime * income + mealComp;
+            const now = new Date();
+            const currentHour = now.getHours() + now.getMinutes() / 60;
+            const startTime = +byId('startSlider').value;
+            const elapsedWorkTime = Math.max(currentHour - startTime, 0) - breakTime;
+            const moneyMade = Math.min(elapsedWorkTime * income + mealComp, totalIncome);
+
+            const breakPercent = (breakTime / (totalWorkTime + breakTime)) * 100, mealCompPercent = mealComp > 0 ? 10 : 0;
             byId('breakBar').style.width = breakPercent + '%';
             byId('mealCompensationBar').style.width = mealCompPercent + '%';
-            byId('progressBar').style.width = (totalWorkTime / (totalWorkTime + breakTime)) * 100 + '%';
+            byId('progressBar').style.width = (elapsedWorkTime / totalWorkTime) * 100 + '%';
             byId('totalEarnings').textContent = totalIncome.toFixed(2);
             byId('breakTimeDisplay').textContent = (breakTime * 60) + ' minutes';
             byId('mealCompensationDisplay').textContent = mealComp.toFixed(2);
