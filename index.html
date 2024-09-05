@@ -20,16 +20,33 @@
         #mealCompensationDisplay { color: #800080; } /* Purple text for meal compensation */
         #moneyMadeDisplay { color: #4CAF50; }
         #breakTimeDisplay { color: #F0AD4E; } /* Orange text for break time */
+        .slider-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .slider-values {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
     <h1>Work Progress Tracker</h1>
     <div class="form-container">
         <label for="income">Income per hour (in €):</label><input type="number" id="income" required>
-        <label>Start time:</label><input type="range" id="startSlider" min="9" max="20" value="9" oninput="syncStartTime()">
-        <input type="time" id="startTime" value="09:00" min="09:00" max="20:00" oninput="syncStartSlider()">
-        <label>End time:</label><input type="range" id="endSlider" min="9" max="20" value="17" oninput="syncEndTime()">
-        <input type="time" id="endTime" value="17:00" max="20:00" oninput="syncEndSlider()">
+
+        <label>Work time (start and end):</label>
+        <div class="slider-container">
+            <input type="range" id="startTimeSlider" min="9" max="20" value="9" oninput="syncSliders()" step="1">
+            <input type="range" id="endTimeSlider" min="9" max="20" value="17" oninput="syncSliders()" step="1">
+        </div>
+        <div class="slider-values">
+            <span>Start time: <span id="startTime">09:00</span></span>
+            <span>End time: <span id="endTime">17:00</span></span>
+        </div>
+
         <div class="output">
             <p id="totalEarningsDisplay">Total earnings: €<span id="totalEarnings">0</span></p>
             <p id="breakTimeDisplay">Break time: <span id="breakTime">0 minutes</span></p> <!-- Orange text for break time -->
@@ -47,15 +64,22 @@
     <script>
         const byId = (id) => document.getElementById(id);
 
-        function syncStartTime() { byId('startTime').value = padTime(byId('startSlider').value); startProgress(); }
-        function syncStartSlider() { byId('startSlider').value = byId('startTime').value.split(':')[0]; startProgress(); }
-        function syncEndTime() { byId('endTime').value = padTime(byId('endSlider').value); startProgress(); }
-        function syncEndSlider() { byId('endSlider').value = byId('endTime').value.split(':')[0]; startProgress(); }
-
         function padTime(val) { return val.padStart(2, '0') + ':00'; }
 
+        function syncSliders() {
+            let startTimeValue = +byId('startTimeSlider').value;
+            let endTimeValue = +byId('endTimeSlider').value;
+            if (startTimeValue >= endTimeValue) {
+                endTimeValue = startTimeValue + 1;
+                byId('endTimeSlider').value = endTimeValue;
+            }
+            byId('startTime').textContent = padTime(startTimeValue.toString());
+            byId('endTime').textContent = padTime(endTimeValue.toString());
+            startProgress();
+        }
+
         function startProgress() {
-            const income = parseFloat(byId('income').value), startTime = +byId('startSlider').value, endTime = +byId('endSlider').value;
+            const income = parseFloat(byId('income').value), startTime = +byId('startTimeSlider').value, endTime = +byId('endTimeSlider').value;
             if (endTime <= startTime || isNaN(income)) return updateProgress(0, 0, 0, 0);
 
             let totalWorkTime = endTime - startTime, breakTime = totalWorkTime >= 5.5 ? 0.5 : 0.25, mealComp = breakTime === 0.5 && endTime === 20 ? 7.50 : 0;
@@ -67,7 +91,7 @@
         function updateProgress(totalIncome, totalWorkTime, breakTime, mealComp, income) {
             const now = new Date();
             const currentHour = now.getHours() + now.getMinutes() / 60;
-            const startTime = +byId('startSlider').value;
+            const startTime = +byId('startTimeSlider').value;
             const elapsedWorkTime = Math.max(currentHour - startTime, 0);
             const moneyMade = Math.min(elapsedWorkTime * income + mealComp, totalIncome);
 
