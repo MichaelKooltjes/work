@@ -88,11 +88,11 @@
         <input type="number" id="income" name="income" required>
 
         <label>Start time:</label>
-        <input type="range" id="startSlider" min="0" max="24" step="1" value="9" oninput="updateStartTimeFromSlider()">
+        <input type="range" id="startSlider" min="0" max="23" step="1" value="9" oninput="updateStartTimeFromSlider()">
         <input type="time" id="startTime" value="09:00" oninput="updateStartTimeFromInput()">
 
         <label>End time:</label>
-        <input type="range" id="endSlider" min="0" max="24" step="1" value="17" oninput="updateEndTimeFromSlider()">
+        <input type="range" id="endSlider" min="0" max="23" step="1" value="17" oninput="updateEndTimeFromSlider()">
         <input type="time" id="endTime" value="17:00" oninput="updateEndTimeFromInput()">
 
         <label for="bonus">Added bonus (in €):</label>
@@ -120,13 +120,15 @@
 
         function updateStartTimeFromSlider() {
             const startSliderValue = document.getElementById('startSlider').value;
-            document.getElementById('startTime').value = `${startSliderValue.padStart(2, '0')}:00`;
+            const formattedTime = `${startSliderValue.padStart(2, '0')}:00`;
+            document.getElementById('startTime').value = formattedTime;
             startProgress();
         }
 
         function updateEndTimeFromSlider() {
             const endSliderValue = document.getElementById('endSlider').value;
-            document.getElementById('endTime').value = `${endSliderValue.padStart(2, '0')}:00`;
+            const formattedTime = `${endSliderValue.padStart(2, '0')}:00`;
+            document.getElementById('endTime').value = formattedTime;
             startProgress();
         }
 
@@ -149,5 +151,51 @@
             const bonus = parseFloat(document.getElementById('bonus').value) || 0;
 
             if (endTime <= startTime || isNaN(income)) {
-                // Reset the progress if the input is invalid, no pop-ups are used
-                update
+                // Reset the progress if the input is invalid
+                updateProgressBar(0, 0, 0);
+                return;
+            }
+
+            const now = new Date();
+            const currentHour = now.getHours() + now.getMinutes() / 60;
+
+            const totalWorkTime = endTime - startTime;
+            const totalIncome = income * totalWorkTime + bonus;
+
+            document.getElementById('totalEarnings').textContent = totalIncome.toFixed(2);
+
+            if (progressInterval) clearInterval(progressInterval);
+
+            progressInterval = setInterval(() => {
+                const currentHour = new Date().getHours() + new Date().getMinutes() / 60;
+
+                if (currentHour >= endTime) {
+                    clearInterval(progressInterval);
+                    updateProgressBar(100, totalIncome, totalIncome);
+                    return;
+                }
+
+                const elapsedWorkTime = Math.max(currentHour - startTime, 0);
+                const moneyMade = Math.min(elapsedWorkTime * income + bonus, totalIncome);
+                const progressPercentage = Math.min((elapsedWorkTime / totalWorkTime) * 100, 100);
+
+                updateProgressBar(progressPercentage, moneyMade, totalIncome);
+            }, 1000);
+        }
+
+        function updateProgressBar(percentage, moneyMade, totalIncome) {
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('moneyMade').textContent = moneyMade.toFixed(2);
+        }
+
+        Number.prototype.padStart = function(size, char) {
+            let result = this.toString();
+            while (result.length < size) result = char + result;
+            return result;
+        };
+
+        // Initialize on load
+        startProgress();
+    </script>
+</body>
+</html>
