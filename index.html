@@ -5,256 +5,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Work Progress Tracker</title>
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f0f0f0;
-            color: #333;
-            text-align: center;
-            padding: 20px;
-        }
-
-        h1 {
-            color: #4CAF50;
-        }
-
-        .form-container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            display: inline-block;
-            margin: 20px;
-            width: 80%;
-            max-width: 500px;
-        }
-
-        .form-container input[type="number"], .form-container input[type="range"], .form-container input[type="time"] {
-            width: 100%;
-            margin: 10px 0;
-            padding: 5px;
-            font-size: 1em;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .form-container label {
-            display: block;
-            margin-top: 10px;
-            color: #4CAF50;
-            font-weight: bold;
-        }
-
-        .progress-container {
-            width: 100%;
-            background-color: #f3f3f3;
-            border-radius: 25px;
-            margin-top: 20px;
-            height: 30px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background-color: #4CAF50;
-            width: 0;
-            transition: width 0.5s ease;
-        }
-
-        .break-bar {
-            height: 100%;
-            background-color: #F0AD4E;
-            width: 0;
-            position: absolute;
-            top: 0;
-            left: 0;
-            transition: width 0.5s ease;
-            z-index: 1;
-        }
-
-        .meal-compensation-bar {
-            height: 100%;
-            background-color: #5BC0DE;
-            width: 0;
-            position: absolute;
-            top: 0;
-            left: 0;
-            transition: width 0.5s ease;
-            z-index: 2;
-        }
-
-        .output p {
-            font-size: 1.2em;
-            margin-top: 10px;
-        }
-
-        .earnings-display p, .break-time-display p, .meal-compensation-display p {
-            color: #4CAF50;
-        }
-
-        .meal-compensation-display p {
-            color: #5BC0DE;
-        }
-
-        .break-time-display p {
-            color: #F0AD4E;
-        }
+        body { font-family: 'Arial', sans-serif; padding: 20px; text-align: center; background-color: #f0f0f0; color: #333; }
+        h1 { color: #4CAF50; }
+        .form-container, .progress-container { margin: 20px auto; width: 80%; max-width: 500px; }
+        .form-container { background-color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        .progress-container { height: 30px; background-color: #f3f3f3; border-radius: 25px; position: relative; }
+        .bar { position: absolute; top: 0; left: 0; height: 100%; transition: width 0.5s ease; }
+        .progress-bar { background-color: #4CAF50; }
+        .break-bar { background-color: #F0AD4E; }
+        .meal-bar { background-color: #5BC0DE; }
+        label, .output p { color: #4CAF50; font-weight: bold; }
+        input { width: 100%; margin: 10px 0; padding: 5px; border: 1px solid #ddd; border-radius: 4px; }
+        .output p { margin-top: 10px; }
     </style>
 </head>
 <body>
     <h1>Work Progress Tracker</h1>
     <div class="form-container">
-        <label for="income">Income per hour (in €):</label>
-        <input type="number" id="income" name="income" required>
-
-        <label>Start time:</label>
-        <input type="range" id="startSlider" min="9" max="20" step="1" value="9" oninput="syncStartSliderAndTime()">
-        <input type="time" id="startTime" value="09:00" oninput="syncStartTimeAndSlider()" min="09:00" max="20:00">
-
-        <label>End time:</label>
-        <input type="range" id="endSlider" min="9" max="20" step="1" value="17" oninput="syncEndSliderAndTime()">
-        <input type="time" id="endTime" value="17:00" oninput="syncEndTimeAndSlider()" max="20:00">
-
-        <div class="earnings-display">
-            <p>Total expected earnings: €<span id="totalEarnings">0</span></p>
-        </div>
-        
-        <div class="break-time-display">
+        <label for="income">Income per hour (in €):</label><input type="number" id="income" required>
+        <label>Start time:</label><input type="range" id="startSlider" min="9" max="20" value="9" oninput="syncStartTime()">
+        <input type="time" id="startTime" value="09:00" min="09:00" max="20:00" oninput="syncStartSlider()">
+        <label>End time:</label><input type="range" id="endSlider" min="9" max="20" value="17" oninput="syncEndTime()">
+        <input type="time" id="endTime" value="17:00" max="20:00" oninput="syncEndSlider()">
+        <div class="output">
+            <p>Total earnings: €<span id="totalEarnings">0</span></p>
             <p>Break time: <span id="breakTimeDisplay">0 minutes</span></p>
-        </div>
-
-        <div class="meal-compensation-display">
             <p>Meal compensation: €<span id="mealCompensationDisplay">0.00</span></p>
         </div>
     </div>
-
     <div class="progress-container">
-        <div class="break-bar" id="breakBar"></div>
-        <div class="meal-compensation-bar" id="mealCompensationBar"></div>
-        <div class="progress-bar" id="progressBar"></div>
+        <div class="bar break-bar" id="breakBar"></div>
+        <div class="bar meal-bar" id="mealCompensationBar"></div>
+        <div class="bar progress-bar" id="progressBar"></div>
     </div>
-
-    <div class="earnings-display">
-        <p>Money made so far: €<span id="moneyMade">0</span></p>
+    <div class="output">
+        <p>Money made: €<span id="moneyMade">0</span></p>
     </div>
 
     <script>
-        let progressInterval;
+        const byId = (id) => document.getElementById(id);
 
-        document.querySelectorAll('#income, #startSlider, #endSlider, #startTime, #endTime').forEach(input => {
-            input.addEventListener('input', startProgress);
-        });
+        function syncStartTime() { byId('startTime').value = padTime(byId('startSlider').value); startProgress(); }
+        function syncStartSlider() { byId('startSlider').value = byId('startTime').value.split(':')[0]; startProgress(); }
+        function syncEndTime() { byId('endTime').value = padTime(byId('endSlider').value); startProgress(); }
+        function syncEndSlider() { byId('endSlider').value = byId('endTime').value.split(':')[0]; startProgress(); }
 
-        // Synchronize slider and time input fields for the start time
-        function syncStartSliderAndTime() {
-            const startSliderValue = document.getElementById('startSlider').value;
-            document.getElementById('startTime').value = `${startSliderValue.padStart(2, '0')}:00`;
-            startProgress();
-        }
-
-        function syncStartTimeAndSlider() {
-            const startTimeValue = document.getElementById('startTime').value.split(':')[0];
-            document.getElementById('startSlider').value = startTimeValue;
-            startProgress();
-        }
-
-        // Synchronize slider and time input fields for the end time
-        function syncEndSliderAndTime() {
-            const endSliderValue = document.getElementById('endSlider').value;
-            document.getElementById('endTime').value = `${endSliderValue.padStart(2, '0')}:00`;
-            startProgress();
-        }
-
-        function syncEndTimeAndSlider() {
-            const endTimeValue = document.getElementById('endTime').value.split(':')[0];
-            document.getElementById('endSlider').value = endTimeValue;
-            startProgress();
-        }
+        function padTime(val) { return val.padStart(2, '0') + ':00'; }
 
         function startProgress() {
-            const income = parseFloat(document.getElementById('income').value);
-            const startTime = parseInt(document.getElementById('startSlider').value);
-            const endTime = parseInt(document.getElementById('endSlider').value);
+            const income = parseFloat(byId('income').value), startTime = +byId('startSlider').value, endTime = +byId('endSlider').value;
+            if (endTime <= startTime || isNaN(income)) return updateProgress(0, 0, 0, 0, 0);
 
-            if (endTime <= startTime || isNaN(income)) {
-                updateProgressBar(0, 0, 0);
-                return;
-            }
+            let totalWorkTime = endTime - startTime, breakTime = totalWorkTime >= 5.5 ? 0.5 : 0.25, mealComp = breakTime === 0.5 && endTime === 20 ? 7.50 : 0;
+            let totalIncome = (totalWorkTime - breakTime) * income + mealComp;
 
-            const now = new Date();
-            const currentHour = now.getHours() + now.getMinutes() / 60;
-
-            let totalWorkTime = endTime - startTime;
-
-            // Break time logic
-            let breakTime = 0;
-            if (totalWorkTime >= 5.5) {
-                breakTime = 0.5; // 30 minutes break
-            } else {
-                breakTime = 0.25; // 15 minutes break
-            }
-
-            totalWorkTime = totalWorkTime - breakTime; // Adjust for break time
-            let totalIncome = income * totalWorkTime;
-
-            // Meal compensation logic
-            let mealCompensation = 0;
-            if (breakTime === 0.5 && endTime === 20) {
-                mealCompensation = 7.50; // Meal compensation of 7.50€
-                totalIncome += mealCompensation; // Add meal compensation to total income
-            }
-
-            // Display break time and meal compensation
-            const breakMinutes = breakTime * 60;
-            document.getElementById('breakTimeDisplay').textContent = `${breakMinutes} minutes`;
-            document.getElementById('mealCompensationDisplay').textContent = mealCompensation.toFixed(2);
-
-            // Update earnings display
-            document.getElementById('totalEarnings').textContent = totalIncome.toFixed(2);
-
-            if (progressInterval) clearInterval(progressInterval);
-
-            progressInterval = setInterval(() => {
-                const currentHour = new Date().getHours() + new Date().getMinutes() / 60;
-
-                if (currentHour >= endTime) {
-                    clearInterval(progressInterval);
-                    updateProgressBar(100, totalIncome, totalIncome, breakTime, totalWorkTime, mealCompensation);
-                    return;
-                }
-
-                const elapsedWorkTime = Math.max(currentHour - startTime, 0);
-                const moneyMade = Math.min(elapsedWorkTime * income + mealCompensation, totalIncome);
-                const progressPercentage = Math.min((elapsedWorkTime / totalWorkTime) * 100, 100);
-
-                updateProgressBar(progressPercentage, moneyMade, totalIncome, breakTime, totalWorkTime, mealCompensation);
-            }, 1000);
+            updateProgress(totalIncome, totalWorkTime, breakTime, mealComp, income);
         }
 
-        function updateProgressBar(percentage, moneyMade, totalIncome, breakTime, totalWorkTime, mealCompensation) {
-            const breakPercentage = (breakTime / (totalWorkTime + breakTime)) * 100I've made the necessary corrections to ensure synchronization between the time inputs and sliders, along with proper calculations. Here's the **updated** part of the code:
-
-### Full Functionality:
-- **Start and end times** are synchronized between the sliders and time fields.
-- **Break time and meal compensation** are properly calculated and displayed.
-- The **progress bar** updates as expected, showing the break and meal compensation portions.
-
-Here's the corrected JavaScript for updating the progress bar:
-
-```javascript
-function updateProgressBar(percentage, moneyMade, totalIncome, breakTime, totalWorkTime, mealCompensation) {
-    const breakPercentage = (breakTime / (totalWorkTime + breakTime)) * 100;
-    const mealCompensationPercentage = mealCompensation > 0 ? 10 : 0; // Meal compensation occupies 10% of the bar
-
-    // Update break bar
-    document.getElementById('breakBar').style.width = breakPercentage + '%';
-
-    // Update meal compensation bar
-    document.getElementById('mealCompensationBar').style.width = mealCompensationPercentage + '%';
-
-    // Update progress bar (stacked over the break and meal compensation bar)
-    document.getElementById('progressBar').style.width = percentage + '%';
-
-    // Update the money made so far
-    document.getElementById('moneyMade').textContent = moneyMade.toFixed(2);
-}
+        function updateProgress(totalIncome, totalWorkTime, breakTime, mealComp, income) {
+            const breakPercent = (breakTime / (totalWorkTime + breakTime)) * 100, mealCompPercent = mealComp > 0 ? 10 : 0, moneyMade = totalWorkTime * income + mealComp;
+            byId('breakBar').style.width = breakPercent + '%';
+            byId('mealCompensationBar').style.width = mealCompPercent + '%';
+            byId('progressBar').style.width = (totalWorkTime / (totalWorkTime + breakTime)) * 100 + '%';
+            byId('totalEarnings').textContent = totalIncome.toFixed(2);
+            byId('breakTimeDisplay').textContent = (breakTime * 60) + ' minutes';
+            byId('mealCompensationDisplay').textContent = mealComp.toFixed(2);
+            byId('moneyMade').textContent = moneyMade.toFixed(2);
+        }
+    </script>
+</body>
+</html>
