@@ -53,6 +53,7 @@
             margin-top: 20px;
             height: 30px;
             overflow: hidden;
+            position: relative;
         }
 
         .progress-bar {
@@ -60,6 +61,17 @@
             background-color: #4caf50;
             width: 0;
             transition: width 0.5s ease;
+        }
+
+        .break-bar {
+            height: 100%;
+            background-color: #f0ad4e;
+            width: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: width 0.5s ease;
+            z-index: 1;
         }
 
         .output {
@@ -78,6 +90,12 @@
         .earnings-display {
             font-size: 1.4em;
             margin: 10px 0;
+        }
+
+        .break-time-display {
+            margin-top: 10px;
+            font-size: 1.2em;
+            color: #f0ad4e;
         }
     </style>
 </head>
@@ -101,9 +119,14 @@
         <div class="earnings-display">
             <p>Total expected earnings: €<span id="totalEarnings">0</span></p>
         </div>
+        
+        <div class="break-time-display">
+            <p>Break time: <span id="breakTimeDisplay">0 minutes</span></p>
+        </div>
     </div>
 
     <div class="progress-container">
+        <div class="break-bar" id="breakBar"></div>
         <div class="progress-bar" id="progressBar"></div>
     </div>
 
@@ -151,7 +174,6 @@
             const bonus = parseFloat(document.getElementById('bonus').value) || 0;
 
             if (endTime <= startTime || isNaN(income)) {
-                // Reset the progress if the input is invalid
                 updateProgressBar(0, 0, 0);
                 return;
             }
@@ -172,6 +194,11 @@
             totalWorkTime = totalWorkTime - breakTime; // Adjust for break time
             const totalIncome = income * totalWorkTime + bonus;
 
+            // Display break time in minutes
+            const breakMinutes = breakTime * 60;
+            document.getElementById('breakTimeDisplay').textContent = `${breakMinutes} minutes`;
+
+            // Update earnings display
             document.getElementById('totalEarnings').textContent = totalIncome.toFixed(2);
 
             if (progressInterval) clearInterval(progressInterval);
@@ -181,7 +208,7 @@
 
                 if (currentHour >= endTime) {
                     clearInterval(progressInterval);
-                    updateProgressBar(100, totalIncome, totalIncome);
+                    updateProgressBar(100, totalIncome, totalIncome, breakTime, totalWorkTime);
                     return;
                 }
 
@@ -189,12 +216,20 @@
                 const moneyMade = Math.min(elapsedWorkTime * income + bonus, totalIncome);
                 const progressPercentage = Math.min((elapsedWorkTime / totalWorkTime) * 100, 100);
 
-                updateProgressBar(progressPercentage, moneyMade, totalIncome);
+                updateProgressBar(progressPercentage, moneyMade, totalIncome, breakTime, totalWorkTime);
             }, 1000);
         }
 
-        function updateProgressBar(percentage, moneyMade, totalIncome) {
+        function updateProgressBar(percentage, moneyMade, totalIncome, breakTime, totalWorkTime) {
+            const breakPercentage = (breakTime / (totalWorkTime + breakTime)) * 100;
+
+            // Update break bar
+            document.getElementById('breakBar').style.width = breakPercentage + '%';
+
+            // Update progress bar (stacked over the break bar)
             document.getElementById('progressBar').style.width = percentage + '%';
+
+            // Update the money made so far
             document.getElementById('moneyMade').textContent = moneyMade.toFixed(2);
         }
 
@@ -204,8 +239,4 @@
             return result;
         };
 
-        // Initialize on load
-        startProgress();
-    </script>
-</body>
-</html>
+       
