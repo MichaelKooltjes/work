@@ -12,13 +12,14 @@
         .progress-container { height: 30px; background-color: #f3f3f3; border-radius: 25px; position: relative; }
         .bar { position: absolute; top: 0; left: 0; height: 100%; transition: width 0.5s ease; }
         .progress-bar { background-color: #4CAF50; z-index: 1; }
-        .meal-bar { background-color: #5BC0DE; z-index: 2; }
+        .meal-bar { background-color: #800080; z-index: 2; } /* Purple for meal compensation */
         label, .output p { font-weight: bold; }
         input { width: 100%; margin: 10px 0; padding: 5px; border: 1px solid #ddd; border-radius: 4px; }
         .output p { margin-top: 10px; }
         #totalEarningsDisplay { color: #4CAF50; }
-        #mealCompensationDisplay { color: #5BC0DE; }
+        #mealCompensationDisplay { color: #800080; } /* Purple text for meal compensation */
         #moneyMadeDisplay { color: #4CAF50; }
+        #breakTimeDisplay { color: #F0AD4E; } /* Orange text for break time */
     </style>
 </head>
 <body>
@@ -31,7 +32,8 @@
         <input type="time" id="endTime" value="17:00" max="20:00" oninput="syncEndSlider()">
         <div class="output">
             <p id="totalEarningsDisplay">Total earnings: €<span id="totalEarnings">0</span></p>
-            <p id="mealCompensationDisplay">Meal compensation: €<span id="mealCompensation">0.00</span></p>
+            <p id="breakTimeDisplay">Break time: <span id="breakTime">0 minutes</span></p> <!-- Orange text for break time -->
+            <p id="mealCompensationDisplay">Meal compensation: €<span id="mealCompensation">0.00</span></p> <!-- Purple text for meal compensation -->
         </div>
     </div>
     <div class="progress-container">
@@ -56,13 +58,13 @@
             const income = parseFloat(byId('income').value), startTime = +byId('startSlider').value, endTime = +byId('endSlider').value;
             if (endTime <= startTime || isNaN(income)) return updateProgress(0, 0, 0, 0);
 
-            let totalWorkTime = endTime - startTime, mealComp = totalWorkTime >= 5.5 && endTime === 20 ? 7.50 : 0;
-            let totalIncome = totalWorkTime * income + mealComp;
+            let totalWorkTime = endTime - startTime, breakTime = totalWorkTime >= 5.5 ? 0.5 : 0.25, mealComp = breakTime === 0.5 && endTime === 20 ? 7.50 : 0;
+            let totalIncome = (totalWorkTime - breakTime) * income + mealComp;
 
-            updateProgress(totalIncome, totalWorkTime, mealComp, income);
+            updateProgress(totalIncome, totalWorkTime, breakTime, mealComp, income);
         }
 
-        function updateProgress(totalIncome, totalWorkTime, mealComp, income) {
+        function updateProgress(totalIncome, totalWorkTime, breakTime, mealComp, income) {
             const now = new Date();
             const currentHour = now.getHours() + now.getMinutes() / 60;
             const startTime = +byId('startSlider').value;
@@ -77,6 +79,7 @@
 
             byId('totalEarnings').textContent = totalIncome.toFixed(2);
             byId('mealCompensation').textContent = mealComp.toFixed(2);
+            byId('breakTime').textContent = (breakTime * 60) + ' minutes';
             byId('moneyMade').textContent = moneyMade.toFixed(2);
         }
     </script>
