@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Work Progress Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.5.1/nouislider.min.css">
     <style>
         body { font-family: 'Arial', sans-serif; padding: 20px; text-align: center; background-color: #f0f0f0; color: #333; }
         h1 { color: #4CAF50; }
@@ -12,24 +13,14 @@
         .progress-container { height: 30px; background-color: #f3f3f3; border-radius: 25px; position: relative; }
         .bar { position: absolute; top: 0; left: 0; height: 100%; transition: width 0.5s ease; }
         .progress-bar { background-color: #4CAF50; z-index: 1; }
-        .meal-bar { background-color: #800080; z-index: 2; } /* Purple for meal compensation */
+        .meal-bar { background-color: #800080; z-index: 2; }
         label, .output p { font-weight: bold; }
         input { width: 100%; margin: 10px 0; padding: 5px; border: 1px solid #ddd; border-radius: 4px; }
         .output p { margin-top: 10px; }
         #totalEarningsDisplay { color: #4CAF50; }
-        #mealCompensationDisplay { color: #800080; } /* Purple text for meal compensation */
+        #mealCompensationDisplay { color: #800080; }
         #moneyMadeDisplay { color: #4CAF50; }
-        #breakTimeDisplay { color: #F0AD4E; } /* Orange text for break time */
-        .slider-container {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-        .slider-values {
-            display: flex;
-            justify-content: space-between;
-            margin: 5px 0;
-        }
+        #breakTimeDisplay { color: #F0AD4E; }
     </style>
 </head>
 <body>
@@ -38,10 +29,7 @@
         <label for="income">Income per hour (in €):</label><input type="number" id="income" required>
 
         <label>Work time (start and end):</label>
-        <div class="slider-container">
-            <input type="range" id="startTimeSlider" min="9" max="20" value="9" oninput="syncSliders()" step="1">
-            <input type="range" id="endTimeSlider" min="9" max="20" value="17" oninput="syncSliders()" step="1">
-        </div>
+        <div id="slider"></div> <!-- This is where the noUiSlider will appear -->
         <div class="slider-values">
             <span>Start time: <span id="startTime">09:00</span></span>
             <span>End time: <span id="endTime">17:00</span></span>
@@ -49,8 +37,8 @@
 
         <div class="output">
             <p id="totalEarningsDisplay">Total earnings: €<span id="totalEarnings">0</span></p>
-            <p id="breakTimeDisplay">Break time: <span id="breakTime">0 minutes</span></p> <!-- Orange text for break time -->
-            <p id="mealCompensationDisplay">Meal compensation: €<span id="mealCompensation">0.00</span></p> <!-- Purple text for meal compensation -->
+            <p id="breakTimeDisplay">Break time: <span id="breakTime">0 minutes</span></p>
+            <p id="mealCompensationDisplay">Meal compensation: €<span id="mealCompensation">0.00</span></p>
         </div>
     </div>
     <div class="progress-container">
@@ -61,28 +49,51 @@
         <p id="moneyMadeDisplay">Money made: €<span id="moneyMade">0</span></p>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.5.1/nouislider.min.js"></script>
     <script>
         const byId = (id) => document.getElementById(id);
 
-        function padTime(val) { return val.padStart(2, '0') + ':00'; }
-
-        function syncSliders() {
-            let startTimeValue = +byId('startTimeSlider').value;
-            let endTimeValue = +byId('endTimeSlider').value;
-            if (startTimeValue >= endTimeValue) {
-                endTimeValue = startTimeValue + 1;
-                byId('endTimeSlider').value = endTimeValue;
+        // Create the slider with two handles
+        const slider = document.getElementById('slider');
+        noUiSlider.create(slider, {
+            start: [9, 17], // Initial start and end time
+            connect: true,
+            range: {
+                'min': 9,
+                'max': 20
+            },
+            step: 1,
+            format: {
+                to: (value) => Math.round(value), // Round to whole number
+                from: (value) => Number(value)
             }
-            byId('startTime').textContent = padTime(startTimeValue.toString());
-            byId('endTime').textContent = padTime(endTimeValue.toString());
+        });
+
+        slider.noUiSlider.on('update', function (values) {
+            let startTime = values[0];
+            let endTime = values[1];
+
+            // Update the displayed time
+            byId('startTime').textContent = padTime(startTime);
+            byId('endTime').textContent = padTime(endTime);
+
+            // Trigger the calculation
             startProgress();
-        }
+        });
+
+        function padTime(val) { return val.toString().padStart(2, '0') + ':00'; }
 
         function startProgress() {
-            const income = parseFloat(byId('income').value), startTime = +byId('startTimeSlider').value, endTime = +byId('endTimeSlider').value;
+            const income = parseFloat(byId('income').value);
+            const sliderValues = slider.noUiSlider.get();
+            const startTime = +sliderValues[0];
+            const endTime = +sliderValues[1];
+
             if (endTime <= startTime || isNaN(income)) return updateProgress(0, 0, 0, 0);
 
-            let totalWorkTime = endTime - startTime, breakTime = totalWorkTime >= 5.5 ? 0.5 : 0.25, mealComp = breakTime === 0.5 && endTime === 20 ? 7.50 : 0;
+            let totalWorkTime = endTime - startTime;
+            let breakTime = totalWorkTime >= 5.5 ? 0.5 : 0.25;
+            let mealComp = breakTime === 0.5 && endTime === 20 ? 7.50 : 0;
             let totalIncome = (totalWorkTime - breakTime) * income + mealComp;
 
             updateProgress(totalIncome, totalWorkTime, breakTime, mealComp, income);
@@ -91,7 +102,8 @@
         function updateProgress(totalIncome, totalWorkTime, breakTime, mealComp, income) {
             const now = new Date();
             const currentHour = now.getHours() + now.getMinutes() / 60;
-            const startTime = +byId('startTimeSlider').value;
+            const sliderValues = slider.noUiSlider.get();
+            const startTime = +sliderValues[0];
             const elapsedWorkTime = Math.max(currentHour - startTime, 0);
             const moneyMade = Math.min(elapsedWorkTime * income + mealComp, totalIncome);
 
