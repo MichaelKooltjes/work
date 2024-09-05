@@ -21,6 +21,11 @@
         #mealCompensationDisplay { color: #800080; }
         #moneyMadeDisplay { color: #4CAF50; }
         #breakTimeDisplay { color: #F0AD4E; }
+        .slider-values {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
@@ -31,8 +36,8 @@
         <label>Work time (start and end):</label>
         <div id="slider"></div> <!-- This is where the noUiSlider will appear -->
         <div class="slider-values">
-            <span>Start time: <span id="startTime">09:00</span></span>
-            <span>End time: <span id="endTime">17:00</span></span>
+            <span>Start time: <input type="time" id="startTimeInput" value="09:00" min="09:00" max="20:00"></span>
+            <span>End time: <input type="time" id="endTimeInput" value="17:00" min="09:00" max="20:00"></span>
         </div>
 
         <div class="output">
@@ -62,26 +67,61 @@
                 'min': 9,
                 'max': 20
             },
-            step: 1,
+            step: 0.5, // Half-hour increments
             format: {
-                to: (value) => Math.round(value), // Round to whole number
+                to: (value) => Math.round(value * 2) / 2, // Round to nearest half-hour
                 from: (value) => Number(value)
             }
         });
 
+        // Sync the slider with the input fields
         slider.noUiSlider.on('update', function (values) {
-            let startTime = values[0];
-            let endTime = values[1];
+            const startTime = values[0];
+            const endTime = values[1];
 
-            // Update the displayed time
-            byId('startTime').textContent = padTime(startTime);
-            byId('endTime').textContent = padTime(endTime);
+            byId('startTimeInput').value = formatTime(startTime);
+            byId('endTimeInput').value = formatTime(endTime);
 
-            // Trigger the calculation
             startProgress();
         });
 
-        function padTime(val) { return val.toString().padStart(2, '0') + ':00'; }
+        // Sync input fields with slider
+        byId('startTimeInput').addEventListener('input', function () {
+            let startTimeValue = timeToFloat(byId('startTimeInput').value);
+            let endTimeValue = timeToFloat(byId('endTimeInput').value);
+
+            if (startTimeValue >= endTimeValue) {
+                endTimeValue = startTimeValue + 0.5;
+                byId('endTimeInput').value = formatTime(endTimeValue);
+            }
+
+            slider.noUiSlider.set([startTimeValue, endTimeValue]);
+        });
+
+        byId('endTimeInput').addEventListener('input', function () {
+            let startTimeValue = timeToFloat(byId('startTimeInput').value);
+            let endTimeValue = timeToFloat(byId('endTimeInput').value);
+
+            if (endTimeValue <= startTimeValue) {
+                startTimeValue = endTimeValue - 0.5;
+                byId('startTimeInput').value = formatTime(startTimeValue);
+            }
+
+            slider.noUiSlider.set([startTimeValue, endTimeValue]);
+        });
+
+        // Convert time (HH:MM) to a float (e.g., 9.5 for 9:30)
+        function timeToFloat(time) {
+            const [hours, minutes] = time.split(':').map(Number);
+            return hours + minutes / 60;
+        }
+
+        // Convert float to time (HH:MM)
+        function formatTime(time) {
+            const hours = Math.floor(time);
+            const minutes = (time - hours) * 60;
+            return `${hours.toString().padStart(2, '0')}:${minutes === 0 ? '00' : '30'}`;
+        }
 
         function startProgress() {
             const income = parseFloat(byId('income').value);
@@ -105,7 +145,7 @@
             const sliderValues = slider.noUiSlider.get();
             const startTime = +sliderValues[0];
             const elapsedWorkTime = Math.max(currentHour - startTime, 0);
-            const moneyMade = Math.min(elapsedWorkTime * income + mealComp, totalIncome);
+            const moneyMade = Math.min(elapsedWorkTime * income + mealComp, totalIncome); // Ensure money made doesn't exceed total earnings
 
             const mealCompPercent = mealComp > 0 ? (mealComp / totalIncome) * 100 : 0;
             const workPercent = (elapsedWorkTime / totalWorkTime) * 100;
